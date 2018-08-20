@@ -2,7 +2,7 @@ Package: ipmisesnors-munin-plugin
 Version: 1.0.__datestamp__
 Architecture: all
 Maintainer: Paul Weaver <paul.weaver.uk@gmail.com>
-Depends: perl, freeipmi-tools, freeipmi-common
+Depends: perl, freeipmi-tools, freeipmi-common, munin-node
 Conflicts:
 Recommends:
 Section: web
