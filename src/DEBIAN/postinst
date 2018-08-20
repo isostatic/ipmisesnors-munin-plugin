@@ -1,6 +1,11 @@
 #!/bin/sh
 #set -e
 if [ "$1" = "configure" ]; then
+	rm /etc/munin/plugins/freeipmi_sensors_*
+	for I in `/usr/local/munin/lib/plugins/freeipmi_sensors_ suggest`
+	do
+		ln -fs /usr/local/munin/lib/plugins/freeipmi_sensors_ /etc/munin/plugins/freeipmi_sensors_$I
+	done
 	/etc/init.d/munin-node restart
 fi
 

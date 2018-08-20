@@ -63,12 +63,22 @@ my $toRet = $hash->{$rq_type};
 if ($ARGV[0] eq "config") {
 	if ($rq_type eq "fan") {
 		print "graph_title Fans\n";
-		print "graph_vlabel %\n";
+		foreach my $name (keys %{$toRet}) {
+			print "graph_vlabel ".$toRet->{$name}->{unit}."\n";;
+			last;
+		}
 	} elsif ($rq_type eq "temperature") {
 		print "graph_title Temperature\n";
 		print "graph_vlabel C\n";
+	} elsif ($rq_type eq "voltage") {
+		print "graph_title Voltage\n";
+		print "graph_vlabel V\n";
 	} else {
 		print "graph_title $rq_type\n";
+		foreach my $name (keys %{$toRet}) {
+			print "graph_vlabel ".$toRet->{$name}->{unit}."\n";;
+			last;
+		}
 	}
 	print "graph_category IPMI\n";
 	
@@ -81,6 +91,10 @@ if ($ARGV[0] eq "config") {
 		print "yes\n"; 
 	} else { 
 		print "no\n"; 
+	}
+} elsif ($ARGV[0] eq "suggest") {
+	foreach (keys %{$hash}) {
+		print "$_\n";
 	}
 } else {
 	foreach my $name (keys %{$toRet}) {
