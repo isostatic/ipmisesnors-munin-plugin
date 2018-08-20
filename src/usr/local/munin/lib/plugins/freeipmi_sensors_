@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+use strict;
+
+# ipmi-sensors
+# ID | Name             | Type         | Reading    | Units | Event
+# 0  | UID              | OEM Reserved | N/A        | N/A   | 'OEM Event = 0002h'
+# 1  | Sys Health LED   | OEM Reserved | N/A        | N/A   | N/A
+# 2  | 01-Inlet Ambient | Temperature  | 19.00      | C     | 'OK'
+# 3  | 02-CPU 1         | Temperature  | 40.00      | C     | 'OK'
+# 4  | 03-P1 DIMM 1-4   | Temperature  | 23.00      | C     | 'OK'
+# 5  | 04-HD Max        | Temperature  | N/A        | C     | N/A
+# 6  | 05-Chipset       | Temperature  | 28.00      | C     | 'OK'
+# 7  | 06-VR P1         | Temperature  | 22.00      | C     | 'OK'
+# 8  | 07-PS 1 Internal | Temperature  | N/A        | C     | N/A
+# 9  | 08-PS 2 Internal | Temperature  | N/A        | C     | N/A
+# 10 | 09-VR 5V Zone    | Temperature  | 28.00      | C     | 'OK'
+# 11 | 10-Storage Batt  | Temperature  | N/A        | C     | N/A
+# 12 | 11-PCI 1         | Temperature  | N/A        | C     | N/A
+# 13 | 12-PCI 2         | Temperature  | N/A        | C     | N/A
+# 14 | 13-LOM Card      | Temperature  | N/A        | C     | N/A
+# 15 | 14-LOM           | Temperature  | N/A        | C     | N/A
+# 16 | 15-PCI 1 Zone    | Temperature  | 32.00      | C     | 'OK'
+# 17 | 16-PCI 2 Zone    | Temperature  | 39.00      | C     | 'OK'
+# 18 | 17-I/O Zone      | Temperature  | N/A        | C     | N/A
+# 19 | 18-CPU Exhaust   | Temperature  | 28.00      | C     | 'OK'
+# 20 | Fan 1            | Fan          | N/A        | N/A   | 'transition to Running'
+# 21 | Fan 1 DutyCycle  | Fan          | 6.27       | %     | 'OK'
+# 22 | Fan 1 Presence   | Fan          | N/A        | N/A   | 'Device Inserted/Device Present'
+# 23 | Fan 2            | Fan          | N/A        | N/A   | 'transition to Running'
+# 24 | Fan 2 DutyCycle  | Fan          | 6.27       | %     | 'OK'
+# 25 | Fan 2 Presence   | Fan          | N/A        | N/A   | 'Device Inserted/Device Present'
+# 26 | Fan 3            | Fan          | N/A        | N/A   | 'transition to Running'
+# 27 | Fan 3 DutyCycle  | Fan          | 36.06      | %     | 'OK'
+# 28 | Fan 3 Presence   | Fan          | N/A        | N/A   | 'Device Inserted/Device Present'
+# 29 | Power Supply 1   | Power Supply | N/A        | N/A   | 'Presence detected'
+# 30 | PS 1 Presence    | Power Supply | N/A        | N/A   | 'Device Inserted/Device Present'
+# 31 | Megacell Status  | Battery      | N/A        | N/A   | N/A
+# 32 | Memory Status    | Memory       | N/A        | N/A   | 'Presence detected'
+
+my $rq_type = $0;
+$rq_type =~ s/.*ipmi_sensors_//;
+
+my $hash = {};
+
+open(CMD, "/usr/sbin/ipmi-sensors|");
+while (<CMD>) {
+	my ($id, $name, $type, $reading, $units, $event) = split(/\|/);
+	$reading =~ s/^\s+|\s+$//g; $reading =~ s/ /_/g;
+	$type =~ s/^\s+|\s+$//g; $type =~ s/ /_/g; $type = lc($type);
+	my $safename = $name; $safename =~ s/^\s+|\s+$//g; $safename =~ s/[- ]/_/g;
+	next if ($reading eq "N/A");
+	next if ($id =~ /ID/);
+	$hash->{$type}->{$safename}->{reading} = $reading;
+	$hash->{$type}->{$safename}->{unit} = $units;
+	$hash->{$type}->{$safename}->{label} = $name;
+	#print "TYPE: $type.$name = $reading\n";
+}
+close(CMD);
+
+my $toRet = $hash->{$rq_type};
+
+
+if ($ARGV[0] eq "config") {
+	if ($rq_type eq "fan") {
+		print "graph_title Fans\n";
+		print "graph_vlabel %\n";
+	} elsif ($rq_type eq "temperature") {
+		print "graph_title Temperature\n";
+		print "graph_vlabel C\n";
+	} else {
+		print "graph_title $rq_type\n";
+	}
+	print "graph_category IPMI\n";
+	
+	foreach my $name (keys %{$toRet}) {
+		my $label = $toRet->{$name}->{label};
+		print "$name.label $label\n";
+	}
+} elsif ($ARGV[0] eq "autoconf") {
+	if (defined($toRet)) { 
+		print "yes\n"; 
+	} else { 
+		print "no\n"; 
+	}
+} else {
+	foreach my $name (keys %{$toRet}) {
+		my $reading = $toRet->{$name}->{reading};
+		print "$name.value $reading\n";
+	}
+}

@@ -1,0 +1,12 @@
+Package: ipmisesnors-munin-plugin
+Version: 1.0.__datestamp__
+Architecture: all
+Maintainer: Paul Weaver <paul.weaver.uk@gmail.com>
+Depends: perl, freeipmi-tools, freeipmi-common
+Conflicts:
+Recommends:
+Section: web
+Priority: optional
+Installed-Size: 1000
+Description: Munin Plugin compatible with freeipmi-common/freeipmi-tools on HP DLxx
+ Allows extracting fan speeds and temperatures
